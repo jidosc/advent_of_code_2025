@@ -33,11 +33,8 @@ def part2():
 
         old_sum = sum
         sum = (sum + mag)
-        if (mag < 0):
-            if (old_sum > 0 and sum < 0):
-                zero_times += 1
-        elif (mag > 0):
-            if (old_sum < 100 and sum > 100):
+        if ((mag < 0 and (old_sum > 0 and sum < 0)) 
+            or (mag > 0 and (old_sum < 100 and sum > 100))):
                 zero_times += 1
 
         sum = sum % 100
