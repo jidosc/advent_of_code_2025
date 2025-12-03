@@ -64,4 +64,20 @@ def part2():
     print(cur_sum)
 
 
-part2()
+def rec_largest_from_nth(number: str, n: int) -> int:
+    largest_index = 0
+    for index in range(len(number)):
+        if index == len(number) - (n-1):
+            break
+        if int(number[index]) > int(number[largest_index]):
+            largest_index = index
+    if n > 1:
+        return int(number[largest_index]) * pow(10, (n-1)) + rec_largest_from_nth(number[largest_index+1:], n-1)
+    return int(number[largest_index])
+
+
+def alt_part2():
+    print(sum([rec_largest_from_nth(n, 12) for n in inputs]))
+
+
+alt_part2()
