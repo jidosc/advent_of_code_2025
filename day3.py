@@ -77,7 +77,7 @@ def rec_largest_from_nth(number: str, n: int) -> int:
 
 
 def alt_part2():
-    print(sum([rec_largest_from_nth(n, 12) for n in inputs]))
+    print(sum([rec_largest_from_nth(line, 12) for line in inputs]))
 
 
 alt_part2()
