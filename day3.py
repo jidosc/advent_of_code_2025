@@ -35,6 +35,8 @@ def part1():
 
 
 def find_largest_nth(number: str, n: int) -> tuple[int, str]:
+    """Returns largest digit that isn't among the last (n-1) 
+    digits, and also the afterwards following digits."""
     largest = 0
     largest_index = 0
 
