@@ -1,98 +1,78 @@
+"""
+Dela in alla i individuella circuits.
+
+För antalet anslutningar:
+- Ta närmaste par
+    - Skippa om redan i samma
+    - Annars: Anslut och slå ihop circuits
+
+Multiplicera N största circuits.
+"""
+
 import math
 
-junctions: list = [
-    tuple(map(int, x.split(",")))
-    for x in open("inputs/day8.txt", "r").read().splitlines()
-]
 
-CONNS = 1000
-
-
-def get_closest(pos: list, boxes: list, blacklist: list = []):
-    closest: list
-    closest_distance: int
-
-    closest = boxes[0] if boxes[0] != pos else boxes[1]
-    closest_distance = distance_3d(pos, closest)
-
-    for b in boxes:
-        if pos == b or b in blacklist:
-            continue
-        dist = distance_3d(pos, b)
-        if dist < closest_distance:
-            closest_distance = dist
-            closest = b
-    return closest, closest_distance
-
-
-def distance_3d(pos1, pos2):
+def distance_3d(pos_a, pos_b) -> float:
     return math.sqrt(
-        math.pow(pos2[0] - pos1[0], 2)
-        + math.pow(pos2[1] - pos1[1], 2)
-        + math.pow(pos2[2] - pos1[2], 2)
+        (pos_b[0] - pos_a[0]) ** 2
+        + (pos_b[1] - pos_a[1]) ** 2
+        + (pos_b[2] - pos_a[2]) ** 2
     )
 
 
-def add_to_circuits(pos: tuple, pair: tuple, circs: list) -> list:
-    new_circs = []
-    added = False
+def closest_pair(junctions, already_paired: list[set]) -> tuple:
+    return min(
+        *[
+            (x, y, distance_3d(x, y))
+            for x in junctions
+            for y in junctions
+            if x != y and any([not {x, y}.isdisjoint(s) for s in already_paired])
+        ],
+        key=lambda p: p[2],
+    )
 
-    for c in circs:
-        new_circs.append(c.copy())
 
-    for c in new_circs:
-        if pair in c or pos in c:
-            if pos not in c:
-                c.append(pos)
-                added = True
-            elif pair not in c:
-                c.append(pair)
-                added = True
-            break
-    else:
-        new_circs.append([])
-        new_circs[-1].append(pos)
-        new_circs[-1].append(pair)
-        added = True
-    #print(new_circs)
-    return (new_circs, added)
+def shares_circuit(junc_a, junc_b, circuits) -> bool:
+    return any({junc_a, junc_b}.issubset(circ) for circ in circuits)
+
+
+def merge_circuits(junc_a, junc_b, circuits) -> list[list]:
+    merge_circs = list(filter(lambda c: junc_a in c or junc_b in c, circuits))
+    new_circuit = merge_circs[0] | merge_circs[1]
+
+    modified_circuits = circuits.copy()
+    modified_circuits.remove(merge_circs[0])
+    modified_circuits.remove(merge_circs[1])
+    modified_circuits.append(new_circuit)
+    return modified_circuits
 
 
 def part1():
-    circuits: list = []
-    closest = []
+    TARGET_CONNECTIONS = 50
 
-    for a in junctions:
-        checked = []
-        for i in range(8):
-            b, dist = get_closest(a, junctions, checked)
+    junctions: set = {
+        tuple(map(int, x.split(",")))
+        for x in open("inputs/day8.txt", "r").read().splitlines()
+    }
+    connections: list[set] = []
+    connection_count = 0
+    circuits: list[set] = []
 
-            for c in closest:
-                if (c["b"] == a and c["a"] == b):
-                    break
-            else:
-                closest.append({"a": a, "b": b, "dist": dist})
+    for j in junctions:
+        circuits.append({j})
 
-            checked.append(b)
-    closest.sort(key=lambda x: x["dist"])
+    while connection_count + 1 < TARGET_CONNECTIONS:
+        conn = closest_pair(junctions, connections)
+        connections.append({conn[0], conn[1]})
+        if not shares_circuit(conn[0], conn[1], circuits):
+            # print(f"Connects {conn}")
+            circuits = merge_circuits(conn[0], conn[1], circuits)
+            connection_count += 1
+        # else:
+        # print(f"Skips {conn}")
 
-    made_conns = 0
-    while made_conns < CONNS:
-        cur = closest.pop(0)
-        res = add_to_circuits(cur["a"], cur["b"], circuits)
-        circuits = res[0]
-        if res[1]:
-            made_conns += 1
-
-    product = 1
-    circuits.sort(key=lambda x: len(x), reverse=True)
-    for i in range(3):
-        if len(circuits) - 1 < i:
-            product *= 1
-        else:
-            #print(product, len(circuits[i]))
-            product *= len(circuits[i])
-    print(product)
+    circuits.sort(key=lambda c: len(c), reverse=True)
+    print([len(c) for c in circuits])
 
 
 part1()
