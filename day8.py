@@ -10,7 +10,6 @@ Multiplicera N största circuits.
 """
 
 import math
-import time
 
 
 def closest_pair(junctions: set, circuits) -> tuple:
@@ -40,8 +39,9 @@ def shares_circuit(juncs: set, circuits) -> bool:
             continue
         if juncs <= circ:
             return True
-        elif not juncs.isdisjoint(circ):
-            return False
+        elif juncs.isdisjoint(circ):
+            continue
+        return False
     return False
 
 
@@ -66,27 +66,27 @@ def part1():
     connection_count = 0
     circuits: list[set] = []
 
+    pairs: list[tuple] = []
+    for i, x in enumerate(junctions):
+        for y in list(junctions)[i+1:]:
+            if x == y:
+                continue
+            pairs.append((x, y))
+    pairs.sort(key = lambda p: math.dist(p[0], p[1]))
+
     for j in junctions:
         circuits.append({j})
 
     while connection_count + 1 < TARGET_CONNECTIONS:
-        start = time.time()
-        conn = closest_pair(junctions, circuits)
-        start = time_part("CLOSEST", start)
-        # print(f"Connects {conn}")
-        circuits = merge_circuits(conn, circuits)
-        start = time_part("MERGE", start)
+        conn = set(pairs.pop(0))
+        if not shares_circuit(conn, circuits):
+            circuits = merge_circuits(conn, circuits)
+            # connection_count += 1 # inside for part 2
         connection_count += 1
-        # else:
-        # print(f"Skips {conn}")
+    # print(conn) for part 2
 
     circuits.sort(key=lambda c: len(c), reverse=True)
     print([len(c) for c in circuits])
-
-
-def time_part(part: str, start: float) -> float:
-    print(f"{part} took {time.time() - start}")
-    return time.time()
 
 
 part1()
