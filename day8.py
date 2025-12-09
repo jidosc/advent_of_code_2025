@@ -1,5 +1,6 @@
 import math
 
+
 def shares_circuit(juncs: set, circuits) -> bool:
     # returns whether a pair of elements is in a single set, or separated
     for circ in circuits:
@@ -16,7 +17,7 @@ def shares_circuit(juncs: set, circuits) -> bool:
 def merge_circuits(juncs, circuits) -> list[list]:
     # finds overlapping circuits
     merge_circs = list(filter(lambda c: not juncs.isdisjoint(c), circuits))
-    new_circuit = merge_circs[0] | merge_circs[1]
+    new_circuit = merge_circs[0] | merge_circs[1]  # union
 
     modified_circuits = circuits.copy()
     modified_circuits.remove(merge_circs[0])
@@ -39,11 +40,11 @@ def part1():
     # creates all pairs of coordinates and sorts from small to large by distance
     pairs: list[tuple] = []
     for i, x in enumerate(junctions):
-        for y in list(junctions)[i+1:]:
+        for y in list(junctions)[i + 1 :]:
             if x == y:
                 continue
             pairs.append((x, y))
-    pairs.sort(key = lambda p: math.dist(p[0], p[1]))
+    pairs.sort(key=lambda p: math.dist(p[0], p[1]))
 
     # initializes all junctions in separate sets (circuits)
     for j in junctions:
