@@ -21,55 +21,84 @@ def part1():
 
 
 def get_area(corner1, corner2) -> float:
-    return abs(corner2[0] - corner1[0] + 1) * abs(corner2[1] - corner1[1] + 1)
+    return (abs(corner2[0] - corner1[0]) + 1) * (abs(corner2[1] - corner1[1]) + 1)
 
 
 def part2():
-    points_in_polygon = []
+    corn = largest_rect(corners)
+    print(get_area(corn[0], corn[1]))
+
+
+def largest_rect(polygon):
     largest_corners: list = [(0, 0), (0, 0)]
     largest_area: float = 0
 
-    max_x = max([x[0] for x in corners]) + 1
-    max_y = max([y[1] for y in corners]) + 1
-    print(max_x, max_y)
-
-    structure = [["." for __ in range(max_x + 2)] for _ in range(max_y + 1)]
-
-    for y, y_pos in enumerate(range(max_y)):
-        for x, x_pos in enumerate(range(max_x)):
-            if (x_pos, y_pos) in corners:
-                structure[y][x] = "#"
-            elif is_point_inside_polygon((x_pos, y_pos), corners):
-                structure[y][x] = "X"
-                points_in_polygon.append((x, y))
-    print("\n".join(["".join(a) for a in structure]))
-        
-
-    for x in corners:
-        for y in corners:
+    for x in polygon:
+        for y in polygon:
             if x == y:
                 continue
-
             area = get_area(x, y)
-            if area > largest_area and is_valid_rect(x, y, points_in_polygon):
+            if area > largest_area and is_valid_rect(x, y, polygon):
                 largest_corners[0] = x
                 largest_corners[1] = y
                 largest_area = area
                 continue
-    print(largest_corners)
-    print(largest_area)
+    return largest_corners
+
+
+def is_valid_rect(a, c, polygon):
+    b = (a[0], c[1])
+    d = (c[0], a[1])
+
+    rect = [a, b, c, d]
+    for v in rect:
+        if not is_point_inside_polygon(v, polygon):
+            return False
+    return not any_edges_intersecting(rect, polygon)
+
+
+def any_edges_intersecting(edges1, edges2):
+    for i, _ in enumerate(edges1):
+        a = (edges1[i], edges1[(i + 1) % len(edges1)])
+        if not is_edge_inside_polygon(a, edges2):
+            return True
+    return False
+
+
+def is_edge_inside_polygon(edge, polygon):
+    ea, eb = edge
+    if not (is_point_inside_polygon(ea, polygon) and is_point_inside_polygon(eb, polygon)):
+        return False
+    
+    n = len(polygon)
+    for i in range(n):
+        pi = polygon[i]
+        pj = polygon[(i+1)%n]
+        if is_edges_intersecting(edge, (pi, pj)):
+            return False
+        
+    samples = [0.25, 0.5, 0.75]
+    for t in samples:
+        sx = ea[0] + (eb[0] - ea[0]) * t
+        sy = ea[1] + (eb[1] - ea[1]) * t
+        if not is_point_inside_polygon((sx, sy), polygon):
+            return False
+
+    return True
+
+
+def orientation(p, q, r):
+    return (q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0])
 
 
 def is_point_inside_polygon(point, polygon):
     def is_on_edge(point, edge):
-        # check if on edge
+        if orientation(edge[0], edge[1], point) != 0:
+            return False
+        
         x, y = point
         (x0, y0), (x1, y1) = edge
-
-        if (min(x0, x1) <= x <= max(x0, x1)) and (min(y0, y1) <= y <= max(y0, y1)):
-            cross_product = (x - x0) * (y1 - y0) - (y - y0) * (x1 - x0)
-            return cross_product == 0
-        return False
+        return (min(x0, x1) <= x <= max(x0, x1)) and (min(y0, y1) <= y <= max(y0, y1))
 
     x, y = point
     n = len(polygon)
@@ -82,36 +111,65 @@ def is_point_inside_polygon(point, polygon):
         if is_on_edge(point, ((x0, y0), (x1, y1))):
             return True
 
-        if y > min(y0, y1):
-            if y <= max(y0, y1):
-                if x <= max(x0, x1):
-                    xinters = (y - y0) * (x1 - x0) / (y1 - y0) + x0
-                    if x0 == x1 or x <= xinters:
-                        inside = not inside
+        if (y0 > y) != (y1 > y):
+            x_intersect = ((y - y0) * (x1 - x0)) / (y1 - y0) + x0
+            if x < x_intersect:
+                inside = not inside
     return inside
 
 
-def is_valid_rect(a, b, polygon_points=None):
-    p0 = (a[0], b[1])
-    p1 = (b[0], a[1])
-    
-    is_valid = (is_point_inside_polygon(p0, corners)
-        and is_point_inside_polygon(p1, corners)
-        and is_point_inside_polygon(a, corners)
-        and is_point_inside_polygon(b, corners))
-    
-    if not is_valid:
-        #print(f"rect {a} to {b} is not valid: corner.")
+def is_edges_intersecting(a, b):
+    a0, a1 = a  # polygon
+    b0, b1 = b  # rectangle
+
+    o1 = orientation(a0, a1, b0)
+    o2 = orientation(a0, a1, b1)
+    o3 = orientation(b0, b1, a0)
+    o4 = orientation(b0, b1, a1)
+
+    if o1 == 0 or o2 == 0 or o3 == 0 or o4 == 0:
         return False
-
-    for x in range(min(a[0], b[0])+1, max(a[0], b[0])):
-        for y in range(min(a[1], b[1])+1, max(a[1], b[1])):
-            if (x, y) not in polygon_points:
-                #print(f"rect {a} to {b} is not valid: points [{(x, y)}]")
-                return False
-    #print(f"rect {a} to {b} is valid.")
-    return True
+    return (o1 > 0) != (o2 > 0) and (o3 > 0) != (o4 > 0)
 
 
-part1()
+def test_cases():
+    try:
+        rect = largest_rect(
+            [
+                tuple(map(int, x.split(",")))
+                for x in open("inputs/test_cases/1.txt", "r").read().splitlines()
+            ]
+        )
+        area = get_area(rect[0], rect[1])
+        assert area == 24
+    except AssertionError:
+        print(f"Expected 24, got {area} because of corners {rect}")
+
+    try:
+        rect = largest_rect(
+            [
+                tuple(map(int, x.split(",")))
+                for x in open("inputs/test_cases/2.txt", "r").read().splitlines()
+            ]
+        )
+        area = get_area(rect[0], rect[1])
+        assert area == 40
+    except AssertionError:
+        print(f"Expected 40, got {area} because of corners {rect}")
+
+    try:
+        rect = largest_rect(
+            [
+                tuple(map(int, x.split(",")))
+                for x in open("inputs/test_cases/3.txt", "r").read().splitlines()
+            ]
+        )
+        area = get_area(rect[0], rect[1])
+        assert area == 100
+    except AssertionError:
+        print(f"Expected 100, got {area} because of corners {rect}")
+
+
+# part1()
 part2()
+# test_cases()
