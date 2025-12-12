@@ -13,26 +13,31 @@ def part1():
 
 
 def part2():
-    print(valid_paths("svr", set()))
+    print(valid_paths("svr", False, False, tuple()))
 
 
-dead_ends = []
-def valid_paths(input, already_visited: set) -> int:
+@cache
+def valid_paths(input, foundDAC, foundFFT, already_visited: tuple) -> int:
     if input == "out":
-        return 1 if {"dac", "fft"}.issubset(already_visited) else 0
+        return foundDAC and foundFFT
 
     if is_dead_end(input, already_visited):
         return 0
     
-    travel_guide = already_visited.copy()
-    travel_guide.add(input)
+    travel_guide = already_visited + (input,)
+
+    if not foundDAC and input == "dac":
+       foundDAC = True
+    elif not foundFFT and input == "fft":
+        foundFFT = True 
 
     total = 0
     for o in register[input]:
-        total += valid_paths(o, travel_guide)
+        total += valid_paths(o, foundDAC, foundFFT, travel_guide)
     return total
 
 
+@cache
 def is_dead_end(input, already_visited: tuple) -> bool:
     if input in already_visited:
         return True
